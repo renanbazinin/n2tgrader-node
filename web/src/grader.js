@@ -8,7 +8,7 @@ import { CPUTest } from "@nand2tetris/simulator/test/cputst.js";
 import { loadAsm, loadHack } from "@nand2tetris/simulator/loader.js";
 import { ROM } from "@nand2tetris/simulator/cpu/memory.js";
 import JSZip from "jszip";
-import { ZipFileSystemAdapter } from "../../src/zip_fs.js"; // Reuse existing adapter if possible, or copy it
+import { ZipFileSystemAdapter } from "./zip_fs.js";
 
 // Helper: infer project folder (e.g. '01') from the uploaded zip filename
 function inferProjectDirFromZip(zipName) {
