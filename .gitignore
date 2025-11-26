@@ -24,3 +24,12 @@ Thumbs.db
 
 # Local env
 .env
+
+# Web
+web/dist/
+web/node_modules/
+web/public/solutions/
+web/public/solutions.json
+.tmp/
+*.out
+*.results.json

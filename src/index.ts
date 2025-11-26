@@ -13,6 +13,16 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { ZipFileSystemAdapter } from "./zip_fs.js";
 
+// Helper: infer project folder (e.g. '01') from the uploaded zip filename
+function inferProjectDirFromZip(zipName: string) {
+  const base = path.basename(zipName).toLowerCase();
+  // look for two-digit or one-digit project numbers like 01,1,02,2, etc.
+  const m = base.match(/(?:^|[-_.])0?([1-9]|1[0-9])(?:[-_.]|$)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return String(n).padStart(2, '0');
+}
+
 // Simple Levenshtein distance for fuzzy matching small names
 function levenshtein(a: string, b: string) {
   const A = a.toLowerCase();
@@ -116,6 +126,76 @@ async function main() {
 
         console.log(`Found ${relevantFiles.length} project files. Running tests...\n`);
 
+        const projectDir = inferProjectDirFromZip(zipPath) || null;
+        console.log(`[DEBUG] Inferred project directory: ${projectDir || 'none'}`);
+
+        // Build solution map early: recursively scan `solutions/` (or specific project subfolder)
+        const solutionsRoot = path.resolve('solutions');
+        const solutionFiles: string[] = [];
+        function walkSolutions(dir: string) {
+          if (!fs.existsSync(dir)) return;
+          const items = fs.readdirSync(dir, { withFileTypes: true });
+          for (const it of items) {
+            const full = path.join(dir, it.name);
+            if (it.isDirectory()) walkSolutions(full);
+            else {
+              const ext = path.extname(it.name).toLowerCase();
+              if (['.tst', '.cmp', '.hdl', '.asm', '.hack'].includes(ext)) {
+                const rel = path.relative(solutionsRoot, full).replace(/\\/g, '/');
+                solutionFiles.push(rel);
+              }
+            }
+          }
+        }
+
+        if (projectDir) {
+          const specificDir = path.join(solutionsRoot, projectDir);
+          if (fs.existsSync(specificDir)) {
+            walkSolutions(specificDir);
+          } else {
+            console.warn(`[WARN] Inferred project dir ${projectDir} but solutions/${projectDir} does not exist.`);
+          }
+        } else {
+          walkSolutions(solutionsRoot);
+        }
+
+        // Build a map of solution files grouped by base name (lowercased)
+        const solutionMap = new Map<string, { files: Record<string, string>, relDir: string }>();
+        for (const rel of solutionFiles) {
+          const fname = path.basename(rel);
+          const ext = path.extname(fname).toLowerCase();
+          const nameNoExt = fname.replace(/\.[^.]+$/, '');
+          const key = nameNoExt.toLowerCase();
+          const dir = path.dirname(rel);
+          if (!solutionMap.has(key)) solutionMap.set(key, { files: {}, relDir: dir });
+          const entry = solutionMap.get(key)!;
+          entry.files[ext] = rel; // store relative path to solution file
+        }
+
+        // Helper to find a solution entry for a given base name, restricted to the projectDir if present
+        function findSolutionForName(name: string) {
+          const lc = name.toLowerCase();
+          // candidates are relative paths in solutionFiles that match the base name
+          const cands = solutionFiles.filter((rel) => {
+            const fname = path.basename(rel);
+            const nameNoExt = fname.replace(/\.[^.]+$/, '');
+            return nameNoExt.toLowerCase() === lc;
+          });
+          if (cands.length === 0) return undefined;
+          // Prefer a candidate that contains .tst/.cmp in the same dir
+          const chosen = cands[0];
+          const dir = path.dirname(chosen);
+          const files: Record<string, string> = {};
+          for (const rel of solutionFiles) {
+            if (path.dirname(rel) !== dir) continue;
+            const fname = path.basename(rel);
+            const nameNoExt = fname.replace(/\.[^.]+$/, '');
+            if (nameNoExt.toLowerCase() !== lc) continue;
+            files[path.extname(fname).toLowerCase()] = rel;
+          }
+          return { files, relDir: dir };
+        }
+
         // Use direct zip-based loader to ensure we get file contents from the archive
         const loadAssignmentZip = async (file: { name: string; base: string; ext: string }) => {
           const entry = zip.file(file.base) || zip.file(path.basename(file.base));
@@ -135,6 +215,26 @@ async function main() {
         const hdlFiles = uniqueFiles.filter((p) => p.ext === '.hdl');
         console.log('[DEBUG] asmFiles:', asmFiles.map((p) => p.base));
         console.log('[DEBUG] hdlFiles:', hdlFiles.map((p) => p.base));
+
+        // Helper to race a promise against a timeout. Declared here so asm handling can use it.
+        const runWithTimeout = async <T>(p: Promise<T>, ms: number, onTimeout: () => T) => {
+          let timer: NodeJS.Timeout | null = null;
+          try {
+            const timeoutPromise = new Promise<T>((resolve, reject) => {
+              timer = setTimeout(() => {
+                try {
+                  const v = onTimeout();
+                  resolve(v);
+                } catch (e) {
+                  reject(e);
+                }
+              }, ms);
+            });
+            return await Promise.race([p, timeoutPromise]);
+          } finally {
+            if (timer) clearTimeout(timer);
+          }
+        };
 
         const asmResults: Array<any> = [];
 
@@ -177,6 +277,27 @@ async function main() {
                       }
                     }
                   }
+                }
+              } catch (_e) {
+                // ignore
+              }
+            }
+
+            // If still missing, attempt to find matching solution files under `solutions/` (recursively)
+            if (!tst || !cmp) {
+              try {
+                const solEntry = solutionMap.get(p.name.toLowerCase());
+                if (solEntry) {
+                  // Prefer .tst/.cmp in solution; then .hdl, .asm, .hack
+                  if (!tst && solEntry.files['.tst']) {
+                    const full = path.join(solutionsRoot, solEntry.files['.tst']);
+                    if (fs.existsSync(full)) tst = fs.readFileSync(full, 'utf8');
+                  }
+                  if (!cmp && solEntry.files['.cmp']) {
+                    const full = path.join(solutionsRoot, solEntry.files['.cmp']);
+                    if (fs.existsSync(full)) cmp = fs.readFileSync(full, 'utf8');
+                  }
+                  // If no tst/cmp, we may still have solution source files (.hdl/.asm/.hack) recorded for debugging
                 }
               } catch (_e) {
                 // ignore
@@ -252,39 +373,42 @@ async function main() {
                 };
 
                 // run three phases similar to FillAutomatic: 0 -> 1 -> 0
-                try { if (test && test.cpu && test.cpu.RAM) test.cpu.RAM.set(24576, 0); } catch (_) {}
-                await runTicks(1000);
-                const out1 = test.log();
+                // Use large tick counts to allow the program to settle (matches FillAutomatic)
+                const FILL_TICKS = 1000000;
+                const addrs = [16384, 17648, 18349, 19444, 20771, 21031, 22596, 23754, 24575];
 
-                try { if (test && test.cpu && test.cpu.RAM) test.cpu.RAM.set(24576, 1); } catch (_) {}
-                await runTicks(1000);
-                const out2 = test.log();
+                try { if (test && test.cpu && test.cpu.RAM) test.cpu.RAM.set(24576, 0); } catch (_) { }
+                await runTicks(FILL_TICKS);
+                // read RAM values directly for the columns used in the compare
+                const readRow = () => {
+                  try {
+                    if (test && test.cpu && test.cpu.RAM) {
+                      return addrs.map((a) => test.cpu.RAM.get(a));
+                    }
+                  } catch (_e) { }
+                  return [] as number[];
+                };
+                const r1 = readRow();
 
-                try { if (test && test.cpu && test.cpu.RAM) test.cpu.RAM.set(24576, 0); } catch (_) {}
-                await runTicks(1000);
-                const out3 = test.log();
+                try { if (test && test.cpu && test.cpu.RAM) test.cpu.RAM.set(24576, 1); } catch (_) { }
+                await runTicks(FILL_TICKS);
+                const r2 = readRow();
 
-                // parse outputs into numeric rows
-                function parseMatrix(txt: string) {
-                  const lines = (txt || '').split(/\r?\n/).filter(Boolean);
-                  const rows: number[][] = [];
-                  for (const ln of lines.slice(1)) {
-                    const nums = (ln.match(/-?\d+/g) || []).map((s) => Number(s));
-                    if (nums.length) rows.push(nums);
-                  }
-                  return rows;
-                }
+                try { if (test && test.cpu && test.cpu.RAM) test.cpu.RAM.set(24576, 0); } catch (_) { }
+                await runTicks(FILL_TICKS);
+                const r3 = readRow();
 
-                const m1 = parseMatrix(out1);
-                const m2 = parseMatrix(out2);
-                const m3 = parseMatrix(out3);
+                const allZeros = (r: number[]) => r.length > 0 && r.every((v) => v === 0);
+                const allOnes = (r: number[]) => r.length > 0 && r.every((v) => v === -1);
 
-                const allZeros = (r: number[]) => r.every((v) => v === 0);
-                const allOnes = (r: number[]) => r.every((v) => v === -1);
+                const pass = allZeros(r1) && allOnes(r2) && allZeros(r3);
 
-                const pass = m1.length >= 1 && m2.length >= 1 && m3.length >= 1 && allZeros(m1[0]) && allOnes(m2[0]) && allZeros(m3[0]);
+                // Detailed debug print for interactive Fill
+                console.log('[DEBUG] Fill interactive rows:', { r1, r2, r3, haveRAM: !!(test && test.cpu && test.cpu.RAM) });
+                console.log('[DEBUG] Fill cmp source (if any):', cmp ? 'provided' : 'none');
 
-                asmResults.push({ name: 'Fill', pass, out: out2, cmp: (Assignments as any)['Fill.cmp'] || '', diff: undefined });
+                // Push result and include the read rows and cmp we actually used
+                asmResults.push({ name: 'Fill', pass, out: JSON.stringify({ r1, r2, r3 }), cmp: (cmp as string) || '', diff: undefined, debug: { r1, r2, r3 } });
                 continue; // skip normal asm handling for Fill
               } catch (e) {
                 asmResults.push({ name: 'Fill', pass: false, out: `Interactive Fill error: ${(e as Error).message}` });
@@ -340,7 +464,16 @@ async function main() {
               test = test.value;
             }
 
-            await test.run();
+            // run the CPUTest but guard with a timeout to avoid infinite hangs
+            try {
+              const RUN_TIMEOUT_MS = 30_000; // per-asm test timeout
+              await runWithTimeout((async () => { await test.run(); return true; })(), RUN_TIMEOUT_MS, () => {
+                throw new Error(`Test run timed out after ${RUN_TIMEOUT_MS}ms`);
+              });
+            } catch (e) {
+              asmResults.push({ name: p.name, pass: false, out: `Test run error: ${(e as Error).message}` });
+              continue;
+            }
             const out = test.log();
             const expected = (cmp || '').toString();
             const actual = out || '';
@@ -375,10 +508,16 @@ async function main() {
         // Debug: print asmResults summary
         try {
           console.log('[DEBUG] asmResults:', asmResults.map((r: any) => ({ name: r.name, pass: r.pass, hasCmp: !!r.cmp, diffLines: r.diff ? r.diff.split('\n').length : 0 })));
-        } catch (_e) {}
+        } catch (_e) { }
 
-        // Run HDL tests via existing runner
-        const hdlResults = hdlFiles.length > 0 ? await runTests(hdlFiles, loadAssignmentZip, vfs as any) : [];
+        // Run HDL tests via existing runner (guarded by timeout)
+        const HDL_TIMEOUT_MS = 60_000; // overall timeout for HDL batch
+        const hdlResults = hdlFiles.length > 0
+          ? await runWithTimeout(runTests(hdlFiles, loadAssignmentZip, vfs as any), HDL_TIMEOUT_MS, () => {
+            console.error(`[ERROR] HDL tests timed out after ${HDL_TIMEOUT_MS}ms`);
+            return [] as any[];
+          })
+          : [];
 
         const results = [...hdlResults, ...asmResults];
         // Deduplicate results by test name: prefer a passing result if any
@@ -393,6 +532,88 @@ async function main() {
         const dedupedResults = Array.from(seenResults.values());
 
         let failures = 0;
+        // DEBUG dump deduped results
+        try { console.log('[DEBUG] dedupedResults:', JSON.stringify(dedupedResults, null, 2)); } catch (_e) { }
+
+        // Build a full, machine-readable JSON summary and write it to a results file next to the zip.
+        console.log('[DEBUG] about to build JSON summary');
+        try {
+          // Re-use solutionMap and solutionFiles built earlier.
+
+          // prefer tests (.tst/.cmp) first, then hdl/asm/hack
+
+          // prefer tests (.tst/.cmp) first, then hdl/asm/hack
+          const extPriority = ['.tst', '.cmp', '.hdl', '.asm', '.hack'];
+
+          const resMap = new Map<string, any>();
+          for (const d of dedupedResults) resMap.set(String(d.name).toLowerCase(), d);
+
+          const resultsByFile: Record<string, any> = {};
+          for (const [baseLower, meta] of solutionMap.entries()) {
+            // choose preferred extension
+            let chosenExt: string | undefined;
+            for (const e of extPriority) if (meta.files[e]) { chosenExt = e; break; }
+            if (!chosenExt) continue; // nothing useful
+            const relPath = meta.files[chosenExt];
+            const displayName = path.basename(relPath);
+            const found = resMap.get(baseLower);
+
+            // attempt to read expected cmp from solution if available
+            let expectedFromSolution: string | null = null;
+            try {
+              if (meta.files['.cmp']) {
+                const full = path.join(solutionsRoot, meta.files['.cmp']);
+                if (fs.existsSync(full)) expectedFromSolution = fs.readFileSync(full, 'utf8');
+              }
+            } catch (_e) { expectedFromSolution = null; }
+
+            if (!found) {
+              resultsByFile[displayName] = { status: 'not_found', isPass: false, message: 'Not present in submission', expected: expectedFromSolution };
+            } else {
+              resultsByFile[displayName] = {
+                status: found.pass ? 'pass' : 'fail',
+                isPass: !!found.pass,
+                message: (found.out && String(found.out).trim()) || (found.diff ? found.diff : ''),
+                expected: found.cmp || expectedFromSolution || null,
+                actual: found.out || null,
+                debug: found.debug || undefined,
+              };
+            }
+          }
+
+          const safeRaw = dedupedResults.map((r: any) => ({ name: r.name, pass: !!r.pass, out: r.out || null, cmp: r.cmp || null, diff: r.diff || null, debug: r.debug || null }));
+          const resultObj = {
+            zip: path.basename(zipPath),
+            uniqueFiles: uniqueFiles.map((p) => p.base),
+            foundCount: uniqueFiles.length,
+            totalTests: results.length,
+            failures: failures,
+            resultsByFile,
+            rawResults: safeRaw,
+            timestamp: new Date().toISOString(),
+          };
+
+          const outJson = JSON.stringify(resultObj);
+          // Print human-friendly fields to console (one per line)
+          console.log('ZIP:', resultObj.zip);
+          console.log('FoundFiles:', resultObj.uniqueFiles.join(', '));
+          console.log('TotalTests:', resultObj.totalTests, 'Failures:', resultObj.failures);
+          // machine-readable JSON marker
+          console.log('__RESULT_JSON__:' + outJson);
+
+          // write results file beside the uploaded zip
+          try {
+            const resultsPath = zipPath + '.results.json';
+            fs.writeFileSync(resultsPath, outJson, 'utf8');
+            console.log('WROTE_RESULTS:', resultsPath);
+          } catch (_e) {
+            // ignore write errors
+          }
+        } catch (_err) {
+          console.error('[DEBUG] summary error:', (_err as Error).message || _err);
+          try { console.error((_err as Error).stack); } catch (_) { }
+        }
+
         for (const test of dedupedResults) {
           const status = test.pass ? "✅ PASSED" : "❌ FAILED";
           console.log(`${status} - ${test.name}`);

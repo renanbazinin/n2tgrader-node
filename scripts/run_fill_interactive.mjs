@@ -104,15 +104,15 @@ const simMemoryPath = 'file://' + path.join(simBase, 'cpu', 'memory.js').replace
   if (test.load) await test.load(path.basename(candidate));
 
   console.log('--- Phase 1: keyboard untouched (0) ---');
-  const out1 = await runPhase(0, 1000);
+  const out1 = await runPhase(0, 1000000);
   console.log(out1);
 
   console.log('--- Phase 2: keyboard pressed (1) ---');
-  const out2 = await runPhase(1, 1000);
+  const out2 = await runPhase(1, 1000000);
   console.log(out2);
 
   console.log('--- Phase 3: keyboard released (0) ---');
-  const out3 = await runPhase(0, 1000);
+  const out3 = await runPhase(0, 1000000);
   console.log(out3);
 
 })();

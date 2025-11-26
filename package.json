@@ -4,10 +4,12 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node --enable-source-maps src/index.js"
+    "start": "node --enable-source-maps src/index.js",
+    "deploy": "node scripts/build-solutions.js && cd web && npm run build && cd .. && gh-pages -d web/dist"
   },
   "dependencies": {
     "@davidsouther/jiffies": "^2.2.5",
+    "express": "^5.1.0",
     "jszip": "^3.10.1",
     "ohm-js": "^17.1.0",
     "rxjs": "^7.8.1",
@@ -17,6 +19,7 @@
     "@types/jszip": "^3.4.1",
     "@types/node": "^20.14.2",
     "@types/yargs": "^17.0.32",
+    "gh-pages": "^6.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   }

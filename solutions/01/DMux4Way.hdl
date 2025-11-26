@@ -16,12 +16,5 @@ CHIP DMux4Way {
     OUT a, b, c, d;
 
     PARTS:
-    /* We view the problem as two parts, first we channel 'in' according
-    to the first entry of 'sel', so that 'in' is in either 'o1' or 'o2'. 
-    Then channel each of these according to the last entry of 'sel', this
-    treats each of 'a', 'b', 'c' and 'd' separately and achieves the desired
-    result. Note that indexing in buses start from the right. */
-    DMux(in=in, sel=sel[1], a=o1, b=o2);
-    DMux(in=o1, sel=sel[0], a=a, b=b);
-    DMux(in=o2, sel=sel[0], a=c, b=d);
+    // Put your code here:
 }

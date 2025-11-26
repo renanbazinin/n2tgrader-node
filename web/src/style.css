@@ -1,0 +1,82 @@
+.root{
+  --muted: #9aa6b2;
+}
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.95);
+  background-color: #121212;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*{box-sizing:border-box}
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background: linear-gradient(180deg,#0b1220 0%, #121212 100%);
+}
+
+#app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+}
+
+h1 { font-size: 2.1rem; margin: 0 }
+
+.card {
+  background: rgba(255,255,255,0.02);
+  padding: 18px;
+  border-radius: 12px;
+  margin-top: 18px;
+  box-shadow: 0 6px 30px rgba(2,6,23,0.6);
+}
+
+input[type="file"]{ display:none }
+.custom-file-upload{
+  border: 1px solid rgba(255,255,255,0.04);
+  display:inline-block; padding:10px 14px; cursor:pointer; border-radius:10px; background:#0b1220; color:#cfe7ff; margin-right:8px
+}
+button{ background:#5f86ff; border:none; padding:10px 14px; color:white; border-radius:10px; cursor:pointer }
+button:active{ transform: translateY(1px) }
+
+table{ width:100%; border-collapse:collapse; margin-top:12px; table-layout: fixed; }
+th,td{ padding:10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.03); vertical-align: top; }
+th{ color:var(--muted) }
+th:nth-child(1) { width: 15%; }
+th:nth-child(2) { width: 10%; }
+th:nth-child(3), th:nth-child(4) { width: 30%; }
+th:nth-child(5) { width: 15%; }
+
+.pass{ color:#4caf50; font-weight:600 }
+.fail{ color:#f44336; font-weight:600 }
+.not-found{ color:#ff9800; font-weight:600 }
+.code{ 
+  font-family: 'Fira Code', monospace; 
+  font-size:0.8rem; 
+  background:rgba(0,0,0,0.3); 
+  padding:8px; 
+  border-radius:6px;
+  white-space: pre; 
+  overflow: auto; 
+  max-height: 300px;
+  max-width: 100%;
+  display: block;
+}
+.hidden{ display:none }
+
+@media (max-width:720px){
+  h1{font-size:1.6rem}
+  .card{padding:12px}
+}
