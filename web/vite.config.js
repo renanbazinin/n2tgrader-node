@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
+  base: '/n2tgrader-node/',
   server: {
     port: 5173
   },
