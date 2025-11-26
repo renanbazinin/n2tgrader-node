@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nand2Tetris Grader</title>
+    <meta name="description" content="Quickly grade nand2tetris project submissions from ZIPs." />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Nand2Tetris Grader" />
+    <meta property="og:description" content="Quickly grade nand2tetris project submissions from ZIPs." />
+    <meta property="og:image" content="https://i.imgur.com/jpmnJ1W.png" />
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Nand2Tetris Grader" />
+    <meta name="twitter:description" content="Quickly grade nand2tetris project submissions from ZIPs." />
+    <meta name="twitter:image" content="https://i.imgur.com/jpmnJ1W.png" />
+    <!-- Favicon / browser icon -->
+    <link rel="icon" type="image/png" href="https://i.imgur.com/jpmnJ1W.png" />
+    <link rel="apple-touch-icon" href="https://i.imgur.com/jpmnJ1W.png" />
+    <meta name="theme-color" content="#ffffff" />
+    <script type="module" crossorigin src="./assets/index-CeM8_QoR.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BEZyvp7i.css">
+  </head>
+  <body>
+    <div id="app">
+      <header style="display:flex;align-items:center;gap:12px;">
+        <div>
+          <h1 style="margin:0;">Nand2Tetris Grader</h1>
+          <p style="margin:2px 0 0;font-size:0.95rem;color:var(--muted,#555);">Quickly grade nand2tetris project submissions from ZIPs.</p>
+        </div>
+      </header>
+      <div class="card">
+        <label for="file-upload" class="custom-file-upload">
+            Upload Zip File
+        </label>
+        <input id="file-upload" type="file" accept=".zip" />
+        <p id="status"></p>
+      </div>
+      <div id="results-container">
+        <table id="results-table">
+            <thead>
+                <tr>
+                    <th>Assignment</th>
+                    <th>Status</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
