@@ -19,37 +19,51 @@
     <link rel="icon" type="image/png" href="https://i.imgur.com/jpmnJ1W.png" />
     <link rel="apple-touch-icon" href="https://i.imgur.com/jpmnJ1W.png" />
     <meta name="theme-color" content="#ffffff" />
-    <script type="module" crossorigin src="./assets/index-CeM8_QoR.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BEZyvp7i.css">
+    <script type="module" crossorigin src="/assets/index-BUQ6n_oW.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BocFBqYD.css">
   </head>
   <body>
     <div id="app">
-      <header style="display:flex;align-items:center;gap:12px;">
+      <header style="display:flex;align-items:center;gap:12px;justify-content:center;">
+        <img src="https://i.imgur.com/jpmnJ1W.png" alt="logo" width="72" height="72" style="border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,0.4)">
         <div>
           <h1 style="margin:0;">Nand2Tetris Grader</h1>
-          <p style="margin:2px 0 0;font-size:0.95rem;color:var(--muted,#555);">Quickly grade nand2tetris project submissions from ZIPs.</p>
+          <p style="margin:2px 0 0;font-size:0.95rem;color:var(--muted,#888);">Quickly grade nand2tetris project submissions from ZIPs.</p>
         </div>
       </header>
       <div class="card">
-        <label for="file-upload" class="custom-file-upload">
-            Upload Zip File
-        </label>
+        <label for="file-upload" class="custom-file-upload">Upload ZIP</label>
         <input id="file-upload" type="file" accept=".zip" />
-        <p id="status"></p>
+        <button id="do-grade">Grade</button>
+        <p id="status" style="margin-top:8px;color:var(--muted,#aaa)"></p>
       </div>
-      <div id="results-container">
+      <div id="results-container" class="card">
+        <h2>Results</h2>
         <table id="results-table">
             <thead>
                 <tr>
                     <th>Assignment</th>
                     <th>Status</th>
-                    <th>Message</th>
+                    <th>Expected</th>
+                    <th>Actual</th>
+                    <th>Notes</th>
                 </tr>
             </thead>
             <tbody>
             </tbody>
         </table>
       </div>
+      <div id="solutions" class="card">
+        <!--<h2>Solutions files</h2>-
+        <div id="solstatus">Loading...</div>
+        <table id="soltable" class="hidden">
+          <thead>
+            <tr><th>Project</th><th>File</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      -->
     </div>
   </body>
 </html>
