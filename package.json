@@ -1,0 +1,23 @@
+{
+  "name": "n2t-grader",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --enable-source-maps src/index.js"
+  },
+  "dependencies": {
+    "@davidsouther/jiffies": "^2.2.5",
+    "jszip": "^3.10.1",
+    "ohm-js": "^17.1.0",
+    "rxjs": "^7.8.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/jszip": "^3.4.1",
+    "@types/node": "^20.14.2",
+    "@types/yargs": "^17.0.32",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

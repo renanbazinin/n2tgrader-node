@@ -1,0 +1,26 @@
+# Node
+node_modules/
+.npm/
+package-lock.json
+.yarn/
+
+# Build / ts
+dist/
+build/
+*.tsbuildinfo
+
+# Logs and debug outputs
+*.log
+debug*.txt
+scripts/*.out
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.code-workspace
+
+# Local env
+.env
