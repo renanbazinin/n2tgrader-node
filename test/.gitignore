@@ -1,0 +1,5 @@
+# Ignore zip files (student submissions)
+*.zip
+
+# Ignore result files (generated)
+*.results.json
