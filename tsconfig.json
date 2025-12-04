@@ -9,8 +9,9 @@
     "baseUrl": ".",
     "paths": {
       "@nand2tetris/projects/*": ["./projects/build/*"],
+      "@nand2tetris/runner/*": ["./runner/build/*"],
       "@nand2tetris/simulator/*": ["./simulator/build/*"]
     }
   },
-  "include": ["src/**/*", "projects/build/**/*", "simulator/build/**/*"]
+  "include": ["src/**/*", "projects/build/**/*", "runner/build/**/*", "simulator/build/**/*"]
 }

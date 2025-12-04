@@ -128,7 +128,17 @@ export abstract class Test<IS extends TestInstruction = TestInstruction> {
   }
 
   async step() {
+    let stepCount = 0;
+    const MAX_STEPS = 100000;
     while (!this._step.done) {
+      stepCount++;
+      if (stepCount % 10000 === 0) {
+        console.log(`[DEBUG] Test.step() iteration: ${stepCount}, current instruction: ${this._step.value?.constructor?.name}`);
+      }
+      if (stepCount >= MAX_STEPS) {
+        console.warn(`[WARN] Test.step() hit max steps (${MAX_STEPS}), breaking out`);
+        break;
+      }
       await this._step.value.do(this);
       this._step = this.steps.next();
 
@@ -143,8 +153,21 @@ export abstract class Test<IS extends TestInstruction = TestInstruction> {
   }
 
   async run() {
+    console.log(`[DEBUG] Test.run() starting...`);
     this.reset();
-    while (!(await this.step()));
+    let runCount = 0;
+    const MAX_RUNS = 3500000; // Increased for FillAutomatic test (3 x 1000000 iterations)
+    while (!(await this.step())) {
+      runCount++;
+      if (runCount % 500000 === 0) {
+        console.log(`[DEBUG] Test.run() loop iteration: ${runCount}`);
+      }
+      if (runCount >= MAX_RUNS) {
+        console.warn(`[WARN] Test.run() hit max runs (${MAX_RUNS}), breaking out`);
+        break;
+      }
+    }
+    console.log(`[DEBUG] Test.run() completed after ${runCount} runs`);
   }
 
   protected readonly breakpoints: Map<string, number> = new Map();

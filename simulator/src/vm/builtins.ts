@@ -19,7 +19,7 @@ export interface VmBuiltin {
 }
 
 function getArgs(memory: VmMemory, n: number) {
-  const args = [];
+  const args: number[] = [];
   for (let i = 0; i < n; i++) {
     args.push(memory.get(memory.SP - n + i));
   }

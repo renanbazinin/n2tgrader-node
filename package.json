@@ -3,12 +3,20 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build:projects": "cd projects && npm run build",
+    "build:runner": "cd runner && npm run build",
+    "build:simulator": "cd simulator && npm run build",
+    "build:packages": "npm run build:projects && npm run build:runner && npm run build:simulator",
+    "build": "npm run build:packages && tsc",
     "start": "node --enable-source-maps src/index.js",
+    "install:all": "npm install && cd projects && npm install && cd ../runner && npm install && cd ../simulator && npm install && cd ../web && npm install",
     "deploy": "node scripts/build-solutions.js && cd web && npm run build && cd .. && gh-pages -d web/dist"
   },
   "dependencies": {
     "@davidsouther/jiffies": "^2.2.5",
+    "@nand2tetris/projects": "file:./projects",
+    "@nand2tetris/runner": "file:./runner",
+    "@nand2tetris/simulator": "file:./simulator",
     "express": "^5.1.0",
     "jszip": "^3.10.1",
     "ohm-js": "^17.1.0",

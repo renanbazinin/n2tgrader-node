@@ -74,7 +74,8 @@ export function diff(as: string[], bs: string[]): Diff[] {
   for (let col = 0; col < q; col++) {
     const a = as[col] ?? "";
     const b = bs[col] ?? "";
-    if (a !== b && !a.match(/\*+/)) {
+    // Skip comparison if expected value (b) is wildcards (don't care)
+    if (a !== b && !b.match(/^\*+$/)) {
       diffs.push({ a, b, col });
     }
   }

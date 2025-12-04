@@ -33,7 +33,8 @@
     "jest-ts-webcompat-resolver": "^1.0.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-grammars",
+    "copy-grammars": "node -e \"const fs=require('fs');const path=require('path');const src='src/languages/grammars';const dest='build/languages/grammars';if(!fs.existsSync(dest))fs.mkdirSync(dest,{recursive:true});fs.readdirSync(src).forEach(f=>fs.copyFileSync(path.join(src,f),path.join(dest,f)));\"",
     "test": "jest --verbose"
   }
 }

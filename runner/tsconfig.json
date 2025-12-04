@@ -3,9 +3,7 @@
   "compilerOptions": {
     "outDir": "build",
     "rootDir": "src",
-    "tsBuildInfoFile": "build/.tsbuildinfo",
-    "jsx": "react-jsx",
-    "noImplicitAny": false
+    "tsBuildInfoFile": "build/.tsbuildinfo"
   },
   "include": ["src"]
 }

@@ -109,7 +109,7 @@ export class StringLib {
   }
 
   intValue(pointer: number) {
-    const digits = [];
+    const digits: number[] = [];
     const neg = this.charAt(pointer, 0) == 45; // minus sign
     const start = neg ? 1 : 0;
     for (let i = start; i < this.length(pointer); i++) {

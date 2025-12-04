@@ -17,6 +17,7 @@ import { CompilationError } from "../languages/base.js";
 import { HDL, HdlParse } from "../languages/hdl.js";
 import { TST, Tst } from "../languages/tst.js";
 import { ChipTest } from "../test/chiptst.js";
+import { compare } from "../compare.js";
 
 export interface AssignmentFiles extends Assignment {
   hdl: string;
@@ -86,7 +87,9 @@ export const maybeBuild =
 export const tryRun =
   (fs: FileSystem) =>
   async (assignment: AssignmentBuild): Promise<AssignmentRun> => {
+    console.log(`[DEBUG] tryRun starting for: ${assignment.name}`);
     if (isErr(assignment.maybeChip)) {
+      console.log(`[DEBUG] ${assignment.name}: Chip build error`);
       return {
         ...assignment,
         pass: false,
@@ -94,18 +97,34 @@ export const tryRun =
       };
     }
     if (isErr(assignment.maybeTest)) {
+      console.log(`[DEBUG] ${assignment.name}: Test build error`);
       return {
         ...assignment,
         pass: false,
         out: Err(assignment.maybeTest).message,
       };
     }
+    console.log(`[DEBUG] ${assignment.name}: Running test...`);
     const test = Ok(assignment.maybeTest)
       .with(Ok(assignment.maybeChip))
       .setFileSystem(fs);
     await test.run();
+    console.log(`[DEBUG] ${assignment.name}: Test completed`);
     const out = test.log();
-    const pass = out.trim() === assignment.cmp.trim();
+    // Use wildcard-aware comparison (handles '*' values in .cmp files)
+    // Parse each line into columns by splitting on '|'
+    const parseOutput = (str: string): string[][] =>
+      str.trim().split('\n').map(line => 
+        line.split('|').map(col => col.trim()).filter(col => col !== '')
+      );
+    const outParsed = parseOutput(out);
+    const cmpParsed = parseOutput(assignment.cmp);
+    const diffs = compare(outParsed, cmpParsed);
+    const pass = diffs.length === 0;
+    console.log(`[DEBUG] ${assignment.name}: pass=${pass}, diffs=${diffs.length}`);
+    if (!pass) {
+      console.log(`[DEBUG] First diff:`, diffs[0]);
+    }
     return { ...assignment, out, pass };
   };
 

@@ -224,7 +224,7 @@ export class Vm {
     instructions: VmInstruction[],
   ): Result<void, CompilationError> {
     const functions: Set<string> = new Set();
-    const calls = [];
+    const calls: CallInstruction[] = [];
 
     for (const inst of instructions) {
       if (inst.op == "function") {

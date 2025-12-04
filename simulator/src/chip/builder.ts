@@ -136,7 +136,7 @@ function createConnection(
 
 function getIndices(pin: PinParts): number[] {
   if (pin.start != undefined && pin.end != undefined) {
-    const indices = [];
+    const indices: number[] = [];
     for (let i = pin.start; i <= pin.end; i++) {
       indices.push(i);
     }

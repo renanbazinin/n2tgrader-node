@@ -1,0 +1,28 @@
+{
+  "name": "@nand2tetris/runner",
+  "version": "0.0.0",
+  "private": true,
+  "description": "",
+  "author": "David Souther <davidsouther@gmail.com>",
+  "license": "ISC",
+  "homepage": "https://davidsouther.github.io/nand2tetris",
+  "type": "module",
+  "exports": {
+    "./*": "./build/*"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "build/*"
+      ]
+    }
+  },
+  "dependencies": {
+    "@davidsouther/jiffies": "^2.2.5",
+    "@nand2tetris/projects": "file:../projects",
+    "@types/node": "^20.14.2"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}

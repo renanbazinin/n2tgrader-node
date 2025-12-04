@@ -50,7 +50,7 @@ export class VmMemory extends RAM {
   }
 
   get statics() {
-    const statics = [];
+    const statics: number[] = [];
     for (let i = 16; i < 256; i++) {
       statics.push(this.get(i));
     }
